@@ -19,9 +19,15 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db() -> AsyncSession:
+async def get_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
         finally:
             await session.close()
+
+
+async def create_tables():
+    """Dev helper — creates all tables directly without Alembic."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
