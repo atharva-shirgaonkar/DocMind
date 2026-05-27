@@ -11,6 +11,7 @@ from app.schemas.document import (
     DocumentListItem,
 )
 from app.services.storage import validate_file, save_upload
+from app.workers.tasks import process_document
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -84,6 +85,9 @@ async def upload_document(
     db.add(document)
     await db.commit()
     await db.refresh(document)
+
+    # Dispatch processing task to Celery worker
+    process_document.delay(str(document.id))
 
     return DocumentUploadResponse(
         id=document.id,
