@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.api.health import router as health_router
+from app.api.documents import router as documents_router
 
 settings = get_settings()
 
@@ -26,6 +27,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(documents_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
