@@ -58,3 +58,82 @@ def chunk_pages(pages: list[tuple[int, str]]) -> list[dict]:
     chunk_index = 0
 
     for page_number, page_text in pages:
+        sentences = _split_into_sentences(page_text)
+        if not sentences:
+            continue
+
+        current_chars = []
+        current_len = 0
+
+        for sentence in sentences:
+            sentence_len = len(sentence)
+
+            if sentence_len > CHUNK_SIZE and not current_chars:
+                for content in _split_long_text(sentence):
+                    chunks.append({
+                        "content": content,
+                        "chunk_index": chunk_index,
+                        "page_number": page_number,
+                        "char_count": len(content),
+                    })
+                    chunk_index += 1
+                current_chars = []
+                current_len = 0
+                continue
+
+            # If adding this sentence would exceed CHUNK_SIZE, flush
+            if current_len + sentence_len > CHUNK_SIZE and current_chars:
+                content = " ".join(current_chars).strip()
+                if len(content) >= MIN_CHUNK_CHARS:
+                    chunks.append({
+                        "content": content,
+                        "chunk_index": chunk_index,
+                        "page_number": page_number,
+                        "char_count": len(content),
+                    })
+                    chunk_index += 1
+
+                # Keep overlap: retain last few sentences
+                overlap_text = content[-CHUNK_OVERLAP:]
+                current_chars = [overlap_text]
+                current_len = len(overlap_text)
+
+            if sentence_len > CHUNK_SIZE:
+                if current_chars:
+                    content = " ".join(current_chars).strip()
+                    if len(content) >= MIN_CHUNK_CHARS:
+                        chunks.append({
+                            "content": content,
+                            "chunk_index": chunk_index,
+                            "page_number": page_number,
+                            "char_count": len(content),
+                        })
+                        chunk_index += 1
+                for content in _split_long_text(sentence):
+                    chunks.append({
+                        "content": content,
+                        "chunk_index": chunk_index,
+                        "page_number": page_number,
+                        "char_count": len(content),
+                    })
+                    chunk_index += 1
+                current_chars = []
+                current_len = 0
+                continue
+
+            current_chars.append(sentence)
+            current_len += sentence_len + 1  # +1 for space
+
+        # Flush remaining sentences for this page
+        if current_chars:
+            content = " ".join(current_chars).strip()
+            if len(content) >= MIN_CHUNK_CHARS:
+                chunks.append({
+                    "content": content,
+                    "chunk_index": chunk_index,
+                    "page_number": page_number,
+                    "char_count": len(content),
+                })
+                chunk_index += 1
+
+    return chunks
