@@ -67,22 +67,21 @@ def test_extractor_unknown_type():
 
 def test_embed_chunks_mocked():
     from app.services.embedder import embed_chunks
+    import numpy as np
+    from unittest.mock import patch, MagicMock
 
-    fake_embedding = [0.1] * 1536
-    mock_response = MagicMock()
-    mock_response.data = [MagicMock(embedding=fake_embedding)]
+    fake_embedding = np.array([0.1] * 384)
 
-    with patch("app.services.embedder.OpenAI") as MockOpenAI:
-        mock_client = MagicMock()
-        mock_client.embeddings.create.return_value = mock_response
-        MockOpenAI.return_value = mock_client
+    mock_model = MagicMock()
+    mock_model.embed.return_value = iter([fake_embedding])
 
+    with patch("app.services.embedder.get_model", return_value=mock_model):
         chunks = [{"content": "Test chunk one", "chunk_index": 0,
                    "page_number": 1, "char_count": 14}]
         result = embed_chunks(chunks)
 
     assert "embedding" in result[0]
-    assert len(result[0]["embedding"]) == 1536
+    assert len(result[0]["embedding"]) == 384
 
 
 def test_embed_chunks_empty():
