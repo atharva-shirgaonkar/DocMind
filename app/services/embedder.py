@@ -1,56 +1,39 @@
 """
-Generate embeddings via OpenAI text-embedding-3-small.
-
-Batches chunks to stay within API rate limits.
-Returns the same list of chunk dicts, each with an "embedding" key
-containing a list[float] of length 1536.
+Generate embeddings using fastembed (local ONNX model).
+No API key required. Runs entirely inside the worker container.
+Model: sentence-transformers/all-MiniLM-L6-v2 → 384 dimensions.
 """
-import time
-from openai import OpenAI
-from app.config import get_settings
+from fastembed import TextEmbedding
 from app.models.chunk import EMBEDDING_DIMENSIONS
 
-settings = get_settings()
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-EMBEDDING_MODEL = "text-embedding-3-small"
-BATCH_SIZE = 100        # OpenAI allows up to 2048 inputs per request
-RETRY_ATTEMPTS = 3
-RETRY_DELAY = 2.0       # seconds between retries
+# Module-level singleton — model is loaded once per worker process
+_model: TextEmbedding | None = None
+
+
+def get_model() -> TextEmbedding:
+    global _model
+    if _model is None:
+        _model = TextEmbedding(model_name=EMBEDDING_MODEL)
+    return _model
 
 
 def embed_chunks(chunks: list[dict]) -> list[dict]:
     """
-    Add an "embedding" key to each chunk dict.
-    Processes in batches. Retries on transient errors.
-    Returns the enriched chunk list.
+    Add an "embedding" key (list[float], length 384) to each chunk dict.
+    Uses local fastembed model — no network calls after first load.
     """
     if not chunks:
         return chunks
 
-    client = OpenAI(api_key=settings.openai_api_key)
+    model = get_model()
     texts = [c["content"] for c in chunks]
 
-    embeddings = []
-    for i in range(0, len(texts), BATCH_SIZE):
-        batch = texts[i: i + BATCH_SIZE]
-        for attempt in range(RETRY_ATTEMPTS):
-            try:
-                response = client.embeddings.create(
-                    model=EMBEDDING_MODEL,
-                    input=batch,
-                    dimensions=EMBEDDING_DIMENSIONS,
-                )
-                batch_embeddings = [item.embedding for item in response.data]
-                embeddings.extend(batch_embeddings)
-                break
-            except Exception as e:
-                if attempt == RETRY_ATTEMPTS - 1:
-                    raise RuntimeError(
-                        f"Embedding failed after {RETRY_ATTEMPTS} attempts: {e}"
-                    )
-                time.sleep(RETRY_DELAY * (attempt + 1))
+    # fastembed.embed() returns a generator of numpy arrays
+    embeddings = list(model.embed(texts))
 
     for chunk, embedding in zip(chunks, embeddings):
-        chunk["embedding"] = embedding
+        chunk["embedding"] = embedding.tolist()
 
     return chunks
