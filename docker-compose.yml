@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build: .
@@ -14,6 +12,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - uploads_data:/tmp/docmind_uploads
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
@@ -27,6 +26,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+      - uploads_data:/tmp/docmind_uploads
     command: celery -A app.workers.celery_app worker --loglevel=info
 
   db:
@@ -60,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  uploads_data:
