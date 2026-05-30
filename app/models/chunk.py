@@ -5,7 +5,7 @@ from pgvector.sqlalchemy import Vector
 from app.models.base import UUIDMixin, TimestampMixin
 from app.database import Base
 
-EMBEDDING_DIMENSIONS = 1536  # OpenAI text-embedding-3-small
+EMBEDDING_DIMENSIONS = 384   # sentence-transformers/all-MiniLM-L6-v2
 
 
 class Chunk(UUIDMixin, TimestampMixin, Base):
