@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     celery_broker_url: str
     celery_result_backend: str
 
-    openai_api_key: str
+    openai_api_key: str = ""
     max_file_size_mb: int = 50
     upload_dir: str = "/tmp/docmind_uploads"
 
