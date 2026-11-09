@@ -28,6 +28,8 @@ app = FastAPI(
 
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
+from app.api.search import router as search_router
+app.include_router(search_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
