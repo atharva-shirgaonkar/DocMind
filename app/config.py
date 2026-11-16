@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     llm_model: str = "llama-3.3-70b-versatile"
     llm_base_url: str = "https://api.groq.com/openai/v1"
+    access_token_expire_minutes: int = 60
+    jwt_algorithm: str = "HS256"
     max_file_size_mb: int = 50
     upload_dir: str = "/tmp/docmind_uploads"
 
