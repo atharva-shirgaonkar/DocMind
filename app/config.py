@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     celery_result_backend: str
 
     openai_api_key: str = ""
+    groq_api_key: str = ""
+    llm_model: str = "llama-3.3-70b-versatile"
+    llm_base_url: str = "https://api.groq.com/openai/v1"
     max_file_size_mb: int = 50
     upload_dir: str = "/tmp/docmind_uploads"
 
