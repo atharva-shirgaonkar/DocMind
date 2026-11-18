@@ -12,6 +12,7 @@ from app.core.security import (
     hash_password, verify_password, create_access_token,
 )
 from app.api.deps import get_current_user
+from app.core.rate_limit import auth_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -21,7 +22,10 @@ def _slugify(name: str) -> str:
     return slug[:80] or "tenant"
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post(
+    "/register", response_model=TokenResponse, status_code=201,
+    dependencies=[Depends(auth_rate_limit)],
+)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     email = body.email.strip().lower()
     existing = await db.execute(select(User).where(User.email == email))
@@ -49,7 +53,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login", response_model=TokenResponse,
+    dependencies=[Depends(auth_rate_limit)],
+)
 async def login(
     form: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
