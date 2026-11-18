@@ -1,11 +1,23 @@
 import uuid
+import pytest
 import pytest_asyncio
+from app.config import get_settings
 from app.database import engine
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def _dispose_engine():
     await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limit_unless_marked(request):
+    settings = get_settings()
+    original = settings.rate_limit_enabled
+    if request.node.get_closest_marker("ratelimit") is None:
+        settings.rate_limit_enabled = False
+    yield
+    settings.rate_limit_enabled = original
     yield
     await engine.dispose()
 
