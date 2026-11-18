@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.api.documents import get_or_create_dev_tenant
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.schemas.ask import AskRequest, AskResponse
 from app.services.rag import answer_question
 
