@@ -1,5 +1,6 @@
 import os
 import uuid
+import hashlib
 import aiofiles
 from pathlib import Path
 from fastapi import UploadFile, HTTPException
@@ -52,10 +53,10 @@ def validate_file(file: UploadFile) -> str:
 async def save_upload(
     file: UploadFile,
     tenant_id: str,
-) -> tuple[str, str, int]:
+) -> tuple[str, str, int, str]:
     """
     Stream-save the upload to disk.
-    Returns (storage_path, safe_filename, file_size_bytes).
+    Returns (storage_path, safe_filename, file_size_bytes, content_hash).
     Raises HTTPException 413 if file exceeds MAX_FILE_SIZE_MB.
     """
     max_bytes = settings.max_file_size_mb * 1024 * 1024
@@ -67,6 +68,7 @@ async def save_upload(
     dest_path = upload_dir / safe_name
 
     total_bytes = 0
+    content_hasher = hashlib.sha256()
     chunk_size = 1024 * 256  # 256 KB chunks
 
     try:
@@ -86,6 +88,7 @@ async def save_upload(
                             f"{settings.max_file_size_mb} MB."
                         ),
                     )
+                content_hasher.update(chunk)
                 await out.write(chunk)
     except HTTPException:
         raise
@@ -97,4 +100,4 @@ async def save_upload(
             detail=f"File save failed: {str(e)}",
         )
 
-    return str(dest_path), safe_name, total_bytes
+    return str(dest_path), safe_name, total_bytes, content_hasher.hexdigest()
