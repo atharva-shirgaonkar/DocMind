@@ -8,6 +8,7 @@ from app.database import engine
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_engine_pool():
+    await engine.dispose()
     yield
     await engine.dispose()
 
