@@ -1,15 +1,7 @@
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.database import engine
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def _dispose_engine():
-    await engine.dispose()
-    yield
-    await engine.dispose()
+from tests.conftest import auth_headers
 
 
 @pytest.mark.asyncio
@@ -20,6 +12,7 @@ async def test_search_returns_results_shape():
         response = await client.post(
             "/api/v1/search",
             json={"query": "work experience", "top_k": 3},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 200
     data = response.json()
@@ -38,7 +31,8 @@ async def test_search_rejects_empty_query():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.post(
-            "/api/v1/search", json={"query": ""}
+            "/api/v1/search", json={"query": ""},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 422
 
@@ -49,6 +43,7 @@ async def test_search_rejects_bad_top_k():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.post(
-            "/api/v1/search", json={"query": "hi", "top_k": 100}
+            "/api/v1/search", json={"query": "hi", "top_k": 100},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 422
