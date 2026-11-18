@@ -1,16 +1,9 @@
 import pytest
-import pytest_asyncio
 import io
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.database import engine
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def reset_engine_pool():
-    await engine.dispose()
-    yield
-    await engine.dispose()
+from tests.conftest import auth_headers
 
 
 @pytest.mark.asyncio
@@ -22,6 +15,7 @@ async def test_upload_pdf_success():
         response = await client.post(
             "/api/v1/documents/upload",
             files={"file": ("test.pdf", fake_pdf, "application/pdf")},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 201
     data = response.json()
@@ -46,6 +40,7 @@ async def test_upload_docx_success():
                     ".wordprocessingml.document",
                 )
             },
+            headers=await auth_headers(client),
         )
     assert response.status_code == 201
     data = response.json()
@@ -60,6 +55,7 @@ async def test_upload_invalid_type_rejected():
         response = await client.post(
             "/api/v1/documents/upload",
             files={"file": ("data.csv", io.BytesIO(b"a,b,c"), "text/csv")},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 400
 
@@ -69,8 +65,22 @@ async def test_list_documents():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
-        response = await client.get("/api/v1/documents/")
+        response = await client.get(
+            "/api/v1/documents/", headers=await auth_headers(client)
+        )
     assert response.status_code == 200
     data = response.json()
     assert "documents" in data
     assert "total" in data
+
+
+@pytest.mark.asyncio
+async def test_upload_requires_authentication():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/api/v1/documents/upload",
+            files={"file": ("test.pdf", io.BytesIO(b"pdf bytes"), "application/pdf")},
+        )
+    assert response.status_code == 401
