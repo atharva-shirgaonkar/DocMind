@@ -158,3 +158,25 @@ async def get_document(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
     return DocumentListItem.model_validate(doc)
+
+
+@router.delete("/{document_id}", status_code=204)
+async def delete_document(
+    document_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Document).where(
+        Document.id == document_id,
+        Document.tenant_id == user.tenant_id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    path = doc.storage_path
+    await db.delete(doc)          # chunks removed by ON DELETE CASCADE
+    await db.commit()
+    try:
+        if path and os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass                      # DB is source of truth; ignore file errors
