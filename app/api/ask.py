@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.api.deps import get_current_user
+from app.core.rate_limit import user_rate_limit
 from app.models.user import User
 from app.schemas.ask import AskRequest, AskResponse
 from app.services.rag import answer_question
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/ask", tags=["Ask"])
 async def ask(
     body: AskRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(user_rate_limit()),
 ):
     """Answer a question from the tenant's documents, with citations."""
     await check_and_record_query(db, user.tenant_id, user.id)
