@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.groq.com/openai/v1"
     access_token_expire_minutes: int = 60
     jwt_algorithm: str = "HS256"
+    rate_limit_enabled: bool = True
+    auth_rate_limit_per_minute: int = 10
+    query_rate_limit_per_minute: int = 30
     max_file_size_mb: int = 50
     upload_dir: str = "/tmp/docmind_uploads"
 
