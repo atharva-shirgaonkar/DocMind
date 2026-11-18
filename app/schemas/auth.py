@@ -22,3 +22,8 @@ class UserResponse(BaseModel):
     role: str
     tenant_id: UUID
     tenant_name: str
+
+
+class ApiKeyResponse(BaseModel):
+    api_key: str
+    note: str = "Store this key now. It will not be shown again."
