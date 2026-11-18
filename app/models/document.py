@@ -34,6 +34,7 @@ class Document(UUIDMixin, TimestampMixin, Base):
     file_type = Column(Enum(DocumentType), nullable=False)
     file_size_bytes = Column(Integer, nullable=False)
     storage_path = Column(String(1000), nullable=False)
+    content_hash = Column(String(64), nullable=True, index=True)
 
     # Processing state
     status = Column(Enum(DocumentStatus),
