@@ -7,9 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.tenant import Tenant
 from app.models.user import User, UserRole
-from app.schemas.auth import RegisterRequest, TokenResponse, UserResponse
+from app.schemas.auth import (
+    RegisterRequest, TokenResponse, UserResponse, ApiKeyResponse,
+)
 from app.core.security import (
     hash_password, verify_password, create_access_token,
+    generate_api_key, hash_api_key,
 )
 from app.api.deps import get_current_user
 from app.core.rate_limit import auth_rate_limit
@@ -84,3 +87,25 @@ async def me(
         id=user.id, email=user.email, full_name=user.full_name,
         role=user.role.value, tenant_id=tenant.id, tenant_name=tenant.name,
     )
+
+
+@router.post("/api-key", response_model=ApiKeyResponse, status_code=201)
+async def create_api_key(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    key = generate_api_key()
+    user.api_key_hash = hash_api_key(key)
+    db.add(user)
+    await db.commit()
+    return ApiKeyResponse(api_key=key)
+
+
+@router.delete("/api-key", status_code=204)
+async def revoke_api_key(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user.api_key_hash = None
+    db.add(user)
+    await db.commit()
