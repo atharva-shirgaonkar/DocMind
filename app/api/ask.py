@@ -12,12 +12,12 @@ router = APIRouter(prefix="/ask", tags=["Ask"])
 async def ask(
     body: AskRequest,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Answer a question from the tenant's documents, with citations."""
-    tenant = await get_or_create_dev_tenant(db)
     result = await answer_question(
         db=db,
-        tenant_id=tenant.id,
+        tenant_id=user.tenant_id,
         question=body.question,
         top_k=body.top_k,
         document_id=body.document_id,
