@@ -1,17 +1,9 @@
 import pytest
-import pytest_asyncio
 from unittest.mock import patch, AsyncMock
 from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.database import engine
 from app.services.rag import _dedupe
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def _dispose_engine():
-    await engine.dispose()
-    yield
-    await engine.dispose()
+from tests.conftest import auth_headers
 
 
 def test_dedupe_removes_identical_chunks():
@@ -40,6 +32,7 @@ async def test_ask_returns_answer_and_sources():
             response = await client.post(
                 "/api/v1/ask",
                 json={"question": "technical skills", "top_k": 3},
+                headers=await auth_headers(client),
             )
     assert response.status_code == 200
     data = response.json()
@@ -56,6 +49,7 @@ async def test_ask_rejects_empty_question():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.post(
-            "/api/v1/ask", json={"question": ""}
+            "/api/v1/ask", json={"question": ""},
+            headers=await auth_headers(client),
         )
     assert response.status_code == 422
