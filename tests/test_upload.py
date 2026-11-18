@@ -2,7 +2,6 @@ import pytest
 import io
 from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.database import engine
 from tests.conftest import auth_headers
 
 
