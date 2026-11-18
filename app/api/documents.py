@@ -1,10 +1,13 @@
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File, Header, HTTPException, Query
+import os
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.database import get_db
 from app.models.document import Document, DocumentStatus, DocumentType
 from app.models.tenant import Tenant
+from app.models.user import User
+from app.api.deps import get_current_user
 from app.schemas.document import (
     DocumentUploadResponse,
     DocumentListResponse,
@@ -16,28 +19,12 @@ from app.workers.tasks import process_document
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
-async def get_or_create_dev_tenant(db: AsyncSession) -> Tenant:
-    """
-    DEV SHORTCUT — Phase 3 replaces this with real JWT auth.
-    Returns the first tenant, or creates a default one if none exists.
-    """
-    result = await db.execute(select(Tenant).limit(1))
-    tenant = result.scalar_one_or_none()
-    if not tenant:
-        tenant = Tenant(
-            name="Default Tenant",
-            slug="default",
-        )
-        db.add(tenant)
-        await db.commit()
-        await db.refresh(tenant)
-    return tenant
-
-
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
 async def upload_document(
+    response: Response,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """
     Upload a PDF or DOCX file.
@@ -48,13 +35,15 @@ async def upload_document(
     file_type_str = validate_file(file)
     file_type = DocumentType(file_type_str)
 
-    # 2. Resolve tenant (dev shortcut — real auth in Task 9)
-    tenant = await get_or_create_dev_tenant(db)
+    tenant_result = await db.execute(
+        select(Tenant).where(Tenant.id == user.tenant_id)
+    )
+    tenant = tenant_result.scalar_one()
 
     # 3. Check tenant document quota
     count_result = await db.execute(
         select(func.count(Document.id)).where(
-            Document.tenant_id == tenant.id
+            Document.tenant_id == user.tenant_id
         )
     )
     doc_count = count_result.scalar_one()
@@ -68,18 +57,41 @@ async def upload_document(
         )
 
     # 4. Save file to disk
-    storage_path, safe_name, file_size = await save_upload(
-        file, str(tenant.id)
+    storage_path, safe_name, file_size, content_hash = await save_upload(
+        file, str(user.tenant_id)
     )
+
+    duplicate_result = await db.execute(
+        select(Document).where(
+            Document.tenant_id == user.tenant_id,
+            Document.content_hash == content_hash,
+        )
+    )
+    existing = duplicate_result.scalar_one_or_none()
+    if existing:
+        os.remove(storage_path)
+        response.status_code = 200
+        return DocumentUploadResponse(
+            id=existing.id,
+            filename=existing.filename,
+            original_filename=existing.original_filename,
+            file_type=existing.file_type,
+            file_size_bytes=existing.file_size_bytes,
+            status=existing.status,
+            created_at=existing.created_at,
+            message="Duplicate file - existing document returned.",
+        )
 
     # 5. Create Document record
     document = Document(
-        tenant_id=tenant.id,
+        tenant_id=user.tenant_id,
+        uploaded_by_id=user.id,
         filename=safe_name,
         original_filename=file.filename or safe_name,
         file_type=file_type,
         file_size_bytes=file_size,
         storage_path=storage_path,
+        content_hash=content_hash,
         status=DocumentStatus.PENDING,
     )
     db.add(document)
@@ -104,14 +116,13 @@ async def upload_document(
 @router.get("/", response_model=DocumentListResponse)
 async def list_documents(
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
     status: DocumentStatus | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
     """List all documents for the current tenant."""
-    tenant = await get_or_create_dev_tenant(db)
-
-    query = select(Document).where(Document.tenant_id == tenant.id)
+    query = select(Document).where(Document.tenant_id == user.tenant_id)
     if status:
         query = query.where(Document.status == status)
 
@@ -134,14 +145,13 @@ async def list_documents(
 async def get_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Get a single document by ID."""
-    tenant = await get_or_create_dev_tenant(db)
-
     result = await db.execute(
         select(Document).where(
             Document.id == document_id,
-            Document.tenant_id == tenant.id,
+            Document.tenant_id == user.tenant_id,
         )
     )
     doc = result.scalar_one_or_none()
