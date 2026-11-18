@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.api.deps import get_current_user
+from app.core.rate_limit import user_rate_limit
 from app.models.user import User
 from app.schemas.search import SearchRequest, SearchResponse, SearchResult
 from app.services.search import search_chunks
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/search", tags=["Search"])
 async def search(
     body: SearchRequest,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(user_rate_limit()),
 ):
     """Semantic search across the current tenant's READY documents."""
     rows = await search_chunks(
