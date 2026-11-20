@@ -35,3 +35,8 @@ async def _ask(client, headers, question="What skills are listed?"):
 
 
 @pytest.mark.asyncio
+async def test_ask_is_recorded_in_history():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        headers = await auth_headers(client, f"History {uuid.uuid4().hex[:6]}")
