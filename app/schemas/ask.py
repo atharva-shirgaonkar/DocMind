@@ -1,11 +1,13 @@
 from pydantic import BaseModel, Field
 from uuid import UUID
+from typing import Literal
 
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=1000)
     top_k: int = Field(4, ge=1, le=10)
     document_id: UUID | None = None
+    mode: Literal["vector", "keyword", "hybrid"] = "hybrid"
 
 
 class AskSource(BaseModel):
