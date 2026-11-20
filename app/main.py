@@ -47,6 +47,8 @@ from app.api.auth import router as auth_router
 app.include_router(auth_router, prefix="/api/v1")
 from app.api.history import router as history_router
 app.include_router(history_router, prefix="/api/v1")
+from app.api.metrics import router as metrics_router
+app.include_router(metrics_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
