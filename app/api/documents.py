@@ -1,10 +1,12 @@
 import uuid
 import os
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from app.database import get_db
 from app.models.document import Document, DocumentStatus, DocumentType
+from app.models.chunk import Chunk
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.api.deps import get_current_user
@@ -180,3 +182,49 @@ async def delete_document(
             os.remove(path)
     except OSError:
         pass                      # DB is source of truth; ignore file errors
+
+
+@router.post(
+    "/{document_id}/reprocess",
+    status_code=202,
+    response_model=DocumentListItem,
+)
+async def reprocess_document(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Document).where(
+        Document.id == document_id,
+        Document.tenant_id == user.tenant_id,
+    ))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    is_failed = doc.status == DocumentStatus.FAILED
+    is_stuck = (
+        doc.status == DocumentStatus.PROCESSING
+        and doc.updated_at < datetime.utcnow() - timedelta(minutes=15)
+    )
+    if not (is_failed or is_stuck):
+        raise HTTPException(
+            status_code=409,
+            detail="Document is not eligible for reprocessing.",
+        )
+
+    await db.execute(delete(Chunk).where(Chunk.document_id == doc.id))
+    doc.status = DocumentStatus.PENDING
+    doc.chunk_count = 0
+    doc.error_message = None
+    await db.commit()
+    await db.refresh(doc)
+
+    if not doc.storage_path or not os.path.exists(doc.storage_path):
+        doc.status = DocumentStatus.FAILED
+        doc.error_message = "Source file missing. Please re-upload."
+        await db.commit()
+        raise HTTPException(status_code=409, detail=doc.error_message)
+
+    process_document.delay(str(doc.id))
+    return DocumentListItem.model_validate(doc)
