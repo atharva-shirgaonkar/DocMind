@@ -4,7 +4,7 @@ from app.database import get_db
 from app.core.rate_limit import user_rate_limit
 from app.models.user import User
 from app.schemas.search import SearchRequest, SearchResponse, SearchResult
-from app.services.search import search_chunks
+from app.services.search import hybrid_search_chunks
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -16,12 +16,13 @@ async def search(
     user: User = Depends(user_rate_limit()),
 ):
     """Semantic search across the current tenant's READY documents."""
-    rows = await search_chunks(
+    rows = await hybrid_search_chunks(
         db=db,
         tenant_id=user.tenant_id,
         query=body.query,
         top_k=body.top_k,
         document_id=body.document_id,
+        mode=body.mode,
     )
     return SearchResponse(
         query=body.query,
