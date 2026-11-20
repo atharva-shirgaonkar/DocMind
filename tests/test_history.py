@@ -27,3 +27,7 @@ def _mock_rag():
     )
 
 
+async def _ask(client, headers, question="What skills are listed?"):
+    with _mock_rag()[0], _mock_rag()[1]:
+        return await client.post(
+            "/api/v1/ask", json={"question": question}, headers=headers
