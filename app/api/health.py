@@ -1,9 +1,11 @@
+import asyncio
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.database import get_db
 from app.config import get_settings
 import redis.asyncio as aioredis
+from app.workers import celery_app
 
 router = APIRouter()
 settings = get_settings()
@@ -46,6 +48,17 @@ async def detailed_health(db: AsyncSession = Depends(get_db)):
         checks["redis"] = {"status": "healthy"}
     except Exception as e:
         checks["redis"] = {"status": "unhealthy", "error": str(e)}
+
+    # Celery worker check; inspect is synchronous, so run it off the event loop.
+    try:
+        inspector = celery_app.control.inspect(timeout=1.0)
+        workers = await asyncio.to_thread(inspector.ping)
+        if isinstance(workers, dict) and workers:
+            checks["worker"] = {"status": "healthy", "workers": len(workers)}
+        else:
+            checks["worker"] = {"status": "unhealthy"}
+    except Exception as e:
+        checks["worker"] = {"status": "unhealthy", "error": str(e)}
 
     overall = "healthy" if all(
         v["status"] == "healthy" for v in checks.values()
