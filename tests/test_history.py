@@ -19,3 +19,7 @@ MOCK_CHUNKS = [{
     "score": 0.8,
 }]
 
+
+def _mock_rag():
+    return (
+        patch("app.services.rag.search_chunks", new=AsyncMock(return_value=MOCK_CHUNKS)),
