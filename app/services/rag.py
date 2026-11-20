@@ -1,6 +1,6 @@
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.search import search_chunks
+from app.services.search import hybrid_search_chunks
 from app.services.llm import generate_chat
 
 SYSTEM_PROMPT = (
@@ -41,14 +41,16 @@ async def answer_question(
     question: str,
     top_k: int = 4,
     document_id: UUID | None = None,
+    mode: str = "hybrid",
 ) -> dict:
     # Over-fetch, then dedupe, so duplicates do not crowd out context
-    candidates = await search_chunks(
+    candidates = await hybrid_search_chunks(
         db=db,
         tenant_id=tenant_id,
         query=question,
         top_k=top_k * 3,
         document_id=document_id,
+        mode=mode,
     )
     chunks = _dedupe(candidates, top_k)
 
