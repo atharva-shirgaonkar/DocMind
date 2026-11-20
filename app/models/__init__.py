@@ -3,6 +3,7 @@ from app.models.user import User, UserRole
 from app.models.document import Document, DocumentStatus, DocumentType
 from app.models.chunk import Chunk, EMBEDDING_DIMENSIONS
 from app.models.usage import UsageEvent
+from app.models.query_log import QueryLog
 
 __all__ = [
     "Tenant",
@@ -14,4 +15,5 @@ __all__ = [
     "Chunk",
     "EMBEDDING_DIMENSIONS",
     "UsageEvent",
+    "QueryLog",
 ]
