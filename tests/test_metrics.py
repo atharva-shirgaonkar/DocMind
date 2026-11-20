@@ -89,7 +89,7 @@ async def test_ask_updates_query_count_and_average_latency():
                 "app.services.rag.generate_chat",
                 new=AsyncMock(return_value="Mock answer [1]."),
             ),
-            patch("app.services.rag.search_chunks", new=AsyncMock(return_value=mock_chunks)),
+            patch("app.services.rag.hybrid_search_chunks", new=AsyncMock(return_value=mock_chunks)),
         ):
             first = await client.post(
                 "/api/v1/ask", json={"question": "question one"}, headers=headers
