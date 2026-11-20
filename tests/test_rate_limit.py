@@ -59,7 +59,7 @@ async def test_query_rate_limit_applies_to_search():
                     "app.services.rag.generate_chat",
                     new=AsyncMock(return_value="Mock answer [1]."),
                 ),
-                patch("app.api.search.search_chunks", new=AsyncMock(return_value=[])),
+                patch("app.api.search.hybrid_search_chunks", new=AsyncMock(return_value=[])),
             ):
                 responses = [
                     await client.post(
