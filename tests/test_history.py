@@ -23,3 +23,7 @@ MOCK_CHUNKS = [{
 def _mock_rag():
     return (
         patch("app.services.rag.search_chunks", new=AsyncMock(return_value=MOCK_CHUNKS)),
+        patch("app.services.rag.generate_chat", new=AsyncMock(return_value="Python and SQL [1].")),
+    )
+
+
