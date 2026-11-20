@@ -51,3 +51,7 @@ async def test_ask_is_recorded_in_history():
 
 @pytest.mark.asyncio
 async def test_history_detail_includes_sources():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        headers = await auth_headers(client, f"Detail {uuid.uuid4().hex[:6]}")
