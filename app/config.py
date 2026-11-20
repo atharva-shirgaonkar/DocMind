@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     auth_rate_limit_per_minute: int = 10
     query_rate_limit_per_minute: int = 30
+    cors_origins: str = "http://localhost:3000"
     max_file_size_mb: int = 50
     upload_dir: str = "/tmp/docmind_uploads"
 
