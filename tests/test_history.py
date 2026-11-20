@@ -40,3 +40,7 @@ async def test_ask_is_recorded_in_history():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         headers = await auth_headers(client, f"History {uuid.uuid4().hex[:6]}")
+        asked = await _ask(client, headers)
+        history = await client.get("/api/v1/history", headers=headers)
+
+    assert asked.status_code == 200
