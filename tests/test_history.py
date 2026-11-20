@@ -68,4 +68,9 @@ async def test_history_detail_includes_sources():
 @pytest.mark.asyncio
 async def test_history_is_tenant_isolated_for_read_and_delete():
     async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        headers_a = await auth_headers(client, f"Tenant A {uuid.uuid4().hex[:6]}")
+        headers_b = await auth_headers(client, f"Tenant B {uuid.uuid4().hex[:6]}")
+        await _ask(client, headers_a)
     ) as client:
