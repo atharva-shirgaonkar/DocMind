@@ -15,6 +15,7 @@ from app.schemas.document import (
     DocumentListResponse,
     DocumentListItem,
 )
+from app.schemas.chunk import ChunkItem, ChunkListResponse
 from app.services.storage import validate_file, save_upload
 from app.workers.tasks import process_document
 
@@ -228,3 +229,81 @@ async def reprocess_document(
 
     process_document.delay(str(doc.id))
     return DocumentListItem.model_validate(doc)
+
+
+@router.get("/{document_id}/chunks", response_model=ChunkListResponse)
+async def list_document_chunks(
+    document_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    document_result = await db.execute(select(Document.id).where(
+        Document.id == document_id,
+        Document.tenant_id == user.tenant_id,
+    ))
+    if document_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    chunk_filter = (
+        Chunk.document_id == document_id,
+        Chunk.tenant_id == user.tenant_id,
+    )
+    total = (await db.execute(
+        select(func.count(Chunk.id)).where(*chunk_filter)
+    )).scalar_one()
+    rows = (await db.execute(
+        select(Chunk.id, Chunk.chunk_index, Chunk.page_number, Chunk.content)
+        .where(*chunk_filter)
+        .order_by(Chunk.chunk_index.asc())
+        .limit(limit)
+        .offset(offset)
+    )).all()
+    items = [
+        ChunkItem(
+            id=row.id,
+            chunk_index=row.chunk_index,
+            page_number=row.page_number,
+            content=row.content,
+            char_count=len(row.content),
+        )
+        for row in rows
+    ]
+    return ChunkListResponse(document_id=document_id, items=items, total=total)
+
+
+@router.get(
+    "/{document_id}/chunks/{chunk_index}",
+    response_model=ChunkItem,
+)
+async def get_document_chunk(
+    document_id: uuid.UUID,
+    chunk_index: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    document_result = await db.execute(select(Document.id).where(
+        Document.id == document_id,
+        Document.tenant_id == user.tenant_id,
+    ))
+    if document_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    row = (await db.execute(
+        select(Chunk.id, Chunk.chunk_index, Chunk.page_number, Chunk.content)
+        .where(
+            Chunk.document_id == document_id,
+            Chunk.tenant_id == user.tenant_id,
+            Chunk.chunk_index == chunk_index,
+        )
+    )).one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Chunk not found.")
+    return ChunkItem(
+        id=row.id,
+        chunk_index=row.chunk_index,
+        page_number=row.page_number,
+        content=row.content,
+        char_count=len(row.content),
+    )
