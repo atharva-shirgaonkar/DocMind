@@ -11,7 +11,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     print(f"🚀 {settings.app_name} starting in {settings.app_env} mode")
     # Import models so metadata is populated before create_all
-    from app.models import Tenant, User, Document, Chunk, UsageEvent  # noqa
+    from app.models import Tenant, User, Document, Chunk, UsageEvent, QueryLog  # noqa
     from app.database import create_tables
     await create_tables()
     print("✅ Database tables verified")
@@ -34,6 +34,8 @@ from app.api.ask import router as ask_router
 app.include_router(ask_router, prefix="/api/v1")
 from app.api.auth import router as auth_router
 app.include_router(auth_router, prefix="/api/v1")
+from app.api.history import router as history_router
+app.include_router(history_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
