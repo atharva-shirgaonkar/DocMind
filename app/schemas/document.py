@@ -25,6 +25,7 @@ class DocumentListItem(BaseModel):
     status: DocumentStatus
     chunk_count: int
     created_at: datetime
+    error_message: str | None = None
 
     model_config = {"from_attributes": True}
 
