@@ -15,3 +15,7 @@ MOCK_CHUNKS = [{
     "document_name": "resume.pdf",
     "page_number": 1,
     "chunk_index": 0,
+    "content": "Python, SQL and FastAPI experience.",
+    "score": 0.8,
+}]
+
