@@ -28,6 +28,7 @@ async def ask(
         question=body.question,
         top_k=body.top_k,
         document_id=body.document_id,
+        mode=body.mode,
     )
     elapsed_ms = int((time.perf_counter() - started_at) * 1000)
     try:
