@@ -59,3 +59,8 @@ async def test_history_detail_includes_sources():
         history = await client.get("/api/v1/history", headers=headers)
         log_id = history.json()["items"][0]["id"]
         detail = await client.get(f"/api/v1/history/{log_id}", headers=headers)
+
+    assert detail.status_code == 200
+    assert isinstance(detail.json()["sources"], list)
+    assert detail.json()["sources"]
+
