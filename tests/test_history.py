@@ -64,3 +64,8 @@ async def test_history_detail_includes_sources():
     assert isinstance(detail.json()["sources"], list)
     assert detail.json()["sources"]
 
+
+@pytest.mark.asyncio
+async def test_history_is_tenant_isolated_for_read_and_delete():
+    async with AsyncClient(
+    ) as client:
