@@ -44,3 +44,6 @@ async def test_ask_is_recorded_in_history():
         history = await client.get("/api/v1/history", headers=headers)
 
     assert asked.status_code == 200
+    assert history.status_code == 200
+    assert history.json()["total"] == 1
+    assert history.json()["items"][0]["question"] == "What skills are listed?"
