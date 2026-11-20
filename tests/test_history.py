@@ -55,3 +55,7 @@ async def test_history_detail_includes_sources():
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         headers = await auth_headers(client, f"Detail {uuid.uuid4().hex[:6]}")
+        await _ask(client, headers)
+        history = await client.get("/api/v1/history", headers=headers)
+        log_id = history.json()["items"][0]["id"]
+        detail = await client.get(f"/api/v1/history/{log_id}", headers=headers)
