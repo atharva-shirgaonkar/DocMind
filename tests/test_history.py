@@ -47,3 +47,7 @@ async def test_ask_is_recorded_in_history():
     assert history.status_code == 200
     assert history.json()["total"] == 1
     assert history.json()["items"][0]["question"] == "What skills are listed?"
+
+
+@pytest.mark.asyncio
+async def test_history_detail_includes_sources():
