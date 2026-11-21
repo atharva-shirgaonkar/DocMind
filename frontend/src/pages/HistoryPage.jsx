@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import Layout from '../components/Layout.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { deleteHistory, getHistory, listHistory } from '../api/history.js'
+import { useToast } from '../components/Toast.jsx'
+import PageTitle from '../components/PageTitle.jsx'
 
 const PAGE_SIZE = 10
 
@@ -10,6 +12,7 @@ function prettyDate(value) {
 }
 
 export default function HistoryPage() {
+  const toast = useToast()
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -57,9 +60,11 @@ export default function HistoryPage() {
       await deleteHistory(deleting.id)
       setDeleting(null)
       setNotice('History entry deleted.')
+      toast('History entry deleted.')
       if (items.length === 1 && page > 0) setPage((value) => value - 1)
       else await refresh()
     } catch (err) {
+      toast(err.message, 'error')
       setError(err.message)
       setDeleting(null)
     } finally {
@@ -68,6 +73,7 @@ export default function HistoryPage() {
   }
 
   return <Layout>
+    <PageTitle title="History" />
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <p className="text-sm font-semibold text-indigo-600">Your workspace</p>
       <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">Query history</h1>
