@@ -6,19 +6,20 @@ import DocumentsPage from './pages/DocumentsPage.jsx'
 import ChatPage from './pages/ChatPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
+import NotFoundPage from './pages/NotFoundPage.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/login" element={<AuthPage />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  )
+  return <ToastProvider><ErrorBoundary><Routes>
+    <Route path="/login" element={<AuthPage />} />
+    <Route element={<ProtectedRoute />}>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/documents" element={<DocumentsPage />} />
+      <Route path="/chat" element={<ChatPage />} />
+      <Route path="/history" element={<HistoryPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+    </Route>
+    <Route path="*" element={<NotFoundPage />} />
+  </Routes></ErrorBoundary></ToastProvider>
 }
