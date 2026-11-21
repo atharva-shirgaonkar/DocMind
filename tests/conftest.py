@@ -13,6 +13,16 @@ async def _dispose_engine():
 
 
 @pytest.fixture(autouse=True)
+def mock_query_embedding(request, monkeypatch):
+    if request.node.get_closest_marker("realembed") is not None:
+        return
+    monkeypatch.setattr(
+        "app.services.search.embed_query",
+        lambda query: [0.1] * 384,
+    )
+
+
+@pytest.fixture(autouse=True)
 def disable_rate_limit_unless_marked(request):
     settings = get_settings()
     original = settings.rate_limit_enabled
