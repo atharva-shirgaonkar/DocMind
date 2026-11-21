@@ -13,7 +13,7 @@ export function clearToken() {
   window.localStorage.removeItem(TOKEN_KEY)
 }
 
-async function request(path, { method = 'GET', body, headers = {}, loginCall = false } = {}) {
+export async function request(path, { method = 'GET', body, headers = {}, loginCall = false, includeStatus = false } = {}) {
   const requestHeaders = new Headers(headers)
   const token = getToken()
   if (token) requestHeaders.set('Authorization', `Bearer ${token}`)
@@ -39,7 +39,7 @@ async function request(path, { method = 'GET', body, headers = {}, loginCall = f
     window.location.assign('/login')
   }
 
-  if (response.status === 204) return null
+  if (response.status === 204) return includeStatus ? { data: null, status: response.status } : null
 
   const contentType = response.headers.get('content-type') || ''
   const payload = contentType.includes('application/json')
@@ -55,7 +55,7 @@ async function request(path, { method = 'GET', body, headers = {}, loginCall = f
     throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'Something went wrong. Please try again.')
   }
 
-  return payload
+  return includeStatus ? { data: payload, status: response.status } : payload
 }
 
 export async function login(email, password) {
