@@ -50,9 +50,14 @@ export async function request(path, { method = 'GET', body, headers = {}, loginC
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After')
       const wait = retryAfter ? ` Please retry in ${retryAfter} seconds.` : ''
-      throw new Error(`Too many requests. Please wait a moment.${wait}`)
+      const error = new Error(`Too many requests. Please wait a moment.${wait}`)
+      error.status = response.status
+      error.retryAfter = retryAfter
+      throw error
     }
-    throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'Something went wrong. Please try again.')
+    const error = new Error(typeof payload?.detail === 'string' ? payload.detail : 'Something went wrong. Please try again.')
+    error.status = response.status
+    throw error
   }
 
   return includeStatus ? { data: payload, status: response.status } : payload
