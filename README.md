@@ -43,7 +43,7 @@ flowchart LR
 - Question answering with citations from retrieved document chunks.
 - Per-tenant duplicate upload detection using file content hashes.
 - Reprocessing for failed or stalled documents.
-- Redis-backed request rate limiting and daily query quotas.
+- Redis-backed rate limits (10 auth requests/min per IP, 30 search/ask requests/min per user) and a rolling 24-hour query quota (default 1,000 per tenant).
 - Tenant-aware query history and usage metrics.
 - Request IDs in responses and structured access log lines.
 
@@ -72,6 +72,8 @@ flowchart LR
 
 4. Open the interactive API documentation at `http://localhost:8000/docs`.
 
+   The first document upload takes about a minute while the local embedding model downloads.
+
 ## API overview
 
 All API routes below are under `/api/v1`.
@@ -82,7 +84,7 @@ All API routes below are under `/api/v1`.
 | GET | `/health` | Basic service health. |
 | GET | `/health/detailed` | Database, Redis, and worker health checks. |
 | POST | `/auth/register` | Register a tenant and its initial user. |
-| POST | `/auth/login` | Obtain an access token. |
+| POST | `/auth/login` | Obtain an access token (form fields: username = email, password). |
 | GET | `/auth/me` | Return the authenticated user. |
 | POST | `/auth/api-key` | Create or replace the authenticated user’s API key. |
 | DELETE | `/auth/api-key` | Revoke the authenticated user’s API key. |
@@ -123,7 +125,7 @@ Values below reflect `.env.example` and application defaults where applicable.
 | `MAX_FILE_SIZE_MB` | `50` | Maximum accepted upload size in megabytes. |
 | `UPLOAD_DIR` | `/tmp/docmind_uploads` | Directory where uploaded files are stored. |
 | `GROQ_API_KEY` | *(required for answer generation)* | API key used for Groq chat completions. |
-| `LLM_MODEL` | `llama-3.3-70b-versatile` | Chat model name sent to the provider. |
+| `LLM_MODEL` | `openai/gpt-oss-20b` | Chat model name; use any model your Groq key can access. |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed browser origins. |
 
 The embedding model runs locally through fastembed; it does not require an embedding API key.
@@ -142,6 +144,8 @@ Run tests with coverage and a missing-lines report:
 docker exec docmind_api pytest --cov=app --cov-report=term-missing -q
 ```
 
+Current suite: 84 tests, 81% coverage.
+
 ## Design decisions
 
 - Embeddings use local fastembed (`all-MiniLM-L6-v2`, 384 dimensions), avoiding a paid embedding API.
@@ -155,3 +159,5 @@ docker exec docmind_api pytest --cov=app --cov-report=term-missing -q
 - Startup uses SQLAlchemy `create_all()` for schema creation; Alembic migrations are not yet implemented.
 - Scanned PDFs do not receive OCR, so extraction requires selectable text.
 - The service is designed as a single-region deployment; multi-region operation is not implemented.
+- Tests run against the development database.
+- Uploaded files are stored on a Docker volume under `/tmp` rather than object storage.
