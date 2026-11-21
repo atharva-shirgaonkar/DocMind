@@ -3,6 +3,7 @@ import Layout from '../components/Layout.jsx'
 import ChatInput from '../components/ChatInput.jsx'
 import MessageBubble from '../components/MessageBubble.jsx'
 import { askQuestion, searchChunks } from '../api/chat.js'
+import PageTitle from '../components/PageTitle.jsx'
 
 const EXAMPLES = ['What are the key qualifications?', 'Summarize the main responsibilities.', 'What dates or deadlines are mentioned?']
 
@@ -48,8 +49,8 @@ export default function ChatPage() {
     }
   }
 
-  const hasError = messages.some((message) => message.role === 'error')
   return <Layout>
+    <PageTitle title="Ask" />
     <main className="mx-auto flex h-[calc(100vh-73px)] max-w-5xl flex-col px-3 py-4 sm:px-6 sm:py-6">
       <div className="mb-4 shrink-0"><p className="text-sm font-semibold text-indigo-600">Ask your documents</p><h1 className="text-2xl font-bold tracking-tight text-slate-900">Chat</h1></div>
       <section ref={logRef} aria-label="Conversation" aria-live="polite" aria-relevant="additions text" className="min-h-0 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-100/70 p-3 sm:p-5">
@@ -61,7 +62,7 @@ export default function ChatPage() {
         </div>}
         {messages.map((message) => <MessageBubble key={message.id} message={message} onRetry={() => lastRequest && send(lastRequest, true)} onCitation={highlightSource} />)}
       </section>
-      <div className="mt-3 shrink-0"><ChatInput onSend={send} waiting={waiting || hasError} /></div>
+      <div className="mt-3 shrink-0"><ChatInput onSend={send} waiting={waiting} /></div>
     </main>
   </Layout>
 }
