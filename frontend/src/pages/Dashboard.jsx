@@ -1,5 +1,6 @@
 import Layout from '../components/Layout.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
+import { Link } from 'react-router-dom'
 
 const sections = [
   { title: 'Documents', description: 'Upload and organize your team’s files.', symbol: '▤' },
@@ -27,16 +28,21 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sections.map(({ title, description, symbol }) => (
-            <section key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          {sections.map(({ title, description, symbol }) => {
+            const card = (
+              <section className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
               <span className="grid size-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
                 <span className="text-xl font-semibold" aria-hidden="true">{symbol}</span>
               </span>
               <h2 className="mt-5 text-lg font-semibold text-slate-900">{title}</h2>
               <p className="mt-1.5 min-h-10 text-sm leading-6 text-slate-600">{description}</p>
               <span className="mt-5 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">Coming soon</span>
-            </section>
-          ))}
+              </section>
+            )
+            return title === 'Documents'
+              ? <Link key={title} to="/documents" className="block rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{card}</Link>
+              : <div key={title}>{card}</div>
+          })}
         </div>
       </main>
     </Layout>
