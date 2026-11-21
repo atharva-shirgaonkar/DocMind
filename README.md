@@ -161,3 +161,22 @@ Current suite: 84 tests, 81% coverage.
 - The service is designed as a single-region deployment; multi-region operation is not implemented.
 - Tests run against the development database.
 - Uploaded files are stored on a Docker volume under `/tmp` rather than object storage.
+
+## Frontend
+
+The frontend uses React, Vite, Tailwind CSS, and React Router. Start the development server with:
+
+```sh
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. The dev server must use port 3000 because backend CORS allows only that origin. Pages: Dashboard, Documents, Ask, History, and Settings.
+
+For a production preview after a build, run `npm run build` followed by `npm run preview` from `frontend/`.
+
+## Screenshots
+
+TODO
