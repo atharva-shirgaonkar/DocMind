@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Layout from '../components/Layout.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { generateApiKey, revokeApiKey } from '../api/apikey.js'
+import { useToast } from '../components/Toast.jsx'
+import PageTitle from '../components/PageTitle.jsx'
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const toast = useToast()
   const [key, setKey] = useState('')
   const [note, setNote] = useState('')
   const [showRevoke, setShowRevoke] = useState(false)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-
-  useEffect(() => () => setKey(''), [])
 
   async function createKey() {
     setWorking(true)
@@ -24,7 +25,9 @@ export default function SettingsPage() {
       const result = await generateApiKey()
       setKey(result.api_key)
       setNote(result.note)
+      toast('New API key generated. Copy it now; it is shown only once.')
     } catch (err) {
+      toast(err.message, 'error')
       setError(err.message)
     } finally {
       setWorking(false)
@@ -49,7 +52,9 @@ export default function SettingsPage() {
       setNote('')
       setShowRevoke(false)
       setNotice('API key revoked.')
+      toast('API key revoked.')
     } catch (err) {
+      toast(err.message, 'error')
       setError(err.message)
       setShowRevoke(false)
     } finally {
@@ -58,6 +63,7 @@ export default function SettingsPage() {
   }
 
   return <Layout>
+    <PageTitle title="Settings" />
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <p className="text-sm font-semibold text-indigo-600">Personalize access</p>
       <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">Settings</h1>
