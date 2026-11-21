@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { deleteDocument, reprocessDocument } from '../api/documents.js'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import StatusBadge from './StatusBadge.jsx'
+import { useToast } from './Toast.jsx'
 
 function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
@@ -16,6 +17,7 @@ export default function DocumentRow({ document, onRefresh, onViewChunks }) {
   const [action, setAction] = useState('')
   const [error, setError] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const toast = useToast()
   const busy = Boolean(action)
   const displayName = document.original_filename || document.filename || 'Untitled document'
 
@@ -24,8 +26,10 @@ export default function DocumentRow({ document, onRefresh, onViewChunks }) {
     setError('')
     try {
       await reprocessDocument(document.id)
+      toast('Document queued for reprocessing.')
       await onRefresh()
     } catch (err) {
+      toast(err.message, 'error')
       setError(err.message)
     } finally {
       setAction('')
@@ -38,9 +42,11 @@ export default function DocumentRow({ document, onRefresh, onViewChunks }) {
     try {
       await deleteDocument(document.id)
       setConfirmOpen(false)
+      toast('Document deleted.')
       await onRefresh()
     } catch (err) {
       setConfirmOpen(false)
+      toast(err.message, 'error')
       setError(err.message)
     } finally {
       setAction('')
