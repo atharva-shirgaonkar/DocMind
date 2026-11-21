@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getUsageMetrics } from '../api/metrics.js'
+import PageTitle from '../components/PageTitle.jsx'
 
 const sections = [
   { title: 'Documents', description: 'Upload and organize your team’s files.', symbol: '▤' },
@@ -23,6 +24,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      <PageTitle title="Dashboard" />
       <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <div className="mb-9">
           <p className="text-sm font-semibold text-indigo-600">Your workspace</p>
@@ -59,7 +61,7 @@ export default function Dashboard() {
               </span>
               <h2 className="mt-5 text-lg font-semibold text-slate-900">{title}</h2>
               <p className="mt-1.5 min-h-10 text-sm leading-6 text-slate-600">{description}</p>
-              <span className="mt-5 inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">Coming soon</span>
+              <span className="mt-5 inline-flex rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">Open {title}</span>
               </section>
             )
             const target = title === 'Documents' ? '/documents' : title === 'Ask' ? '/chat' : '/history'
