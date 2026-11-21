@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
+import PageTitle from '../components/PageTitle.jsx'
 
 export default function AuthPage() {
   const { user, login, register } = useAuth()
@@ -33,6 +34,7 @@ export default function AuthPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-slate-50 px-4 py-10 sm:px-6">
+      <PageTitle title={isRegister ? 'Create account' : 'Sign in'} />
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <span className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-indigo-600 text-xl font-bold text-white shadow-md shadow-indigo-200" aria-hidden="true">D</span>
