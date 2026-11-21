@@ -4,6 +4,7 @@ import UploadBox from '../components/UploadBox.jsx'
 import DocumentRow from '../components/DocumentRow.jsx'
 import ChunkViewer from '../components/ChunkViewer.jsx'
 import { listDocuments } from '../api/documents.js'
+import PageTitle from '../components/PageTitle.jsx'
 
 const PAGE_SIZE = 10
 
@@ -51,6 +52,7 @@ export default function DocumentsPage() {
 
   return (
     <Layout>
+      <PageTitle title="Documents" />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
           <div>
